@@ -1,14 +1,5 @@
 import time 
-
-def mine_block(last_block, data):
-    timestamp = time.time_ns()
-    last_hash = last_block.hash
-    hash = f'{timestamp} - {last_hash}'
-
-    return Block(timestamp, last_hash, hash, data)
-
-def genesis():
-    return Block(1, 'genesis_last_hash', 'genesis_hash', [] )
+from cryptohash import cryptohash
 
 class Block:
     def __init__(self, timestamp, last_hash, hash, data):
@@ -26,9 +17,21 @@ class Block:
             f'data: {self.data}, '
         )
 
+    @staticmethod
+    def mine_block(last_block, data):
+        timestamp = time.time_ns()
+        last_hash = last_block.hash
+        hash = cryptohash(timestamp, last_hash, data)
+
+        return Block(timestamp, last_hash, hash, data)
+
+    @staticmethod
+    def genesis():
+        return Block(1, 'genesis_last_hash', 'genesis_hash', [] )
+
 def main():
-    genesis_block = genesis()
-    block = mine_block(genesis_block, 'Ultimate')
+    genesis_block = Block.genesis()
+    block = Block.mine_block(genesis_block, 'Ultimate')
     print(block)
     
 if __name__ == '__main__':
