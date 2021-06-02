@@ -1,3 +1,4 @@
+#Refer to block.py file in backend/blockchain path
 from backend.blockchain.block import Block
 
 class Blockchain:
