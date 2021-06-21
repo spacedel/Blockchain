@@ -4,6 +4,8 @@ import time
 # Refer to cyptohash.py in the Util folder
 from backend.util.cryptohash import cryptohash
 
+from backend.util.hex_to_binary import hex_to_binary
+
 # Refer to the config.py for global values
 from backend.config import MINE_RATE
 
@@ -49,10 +51,10 @@ class Block:
         nonce = 0
         hash = cryptohash(timestamp, last_hash, data, difficulty, nonce)
         
-        #While loop
+        # While loop
 
-        # While subtring 0 up o difficulty of hash string does not equal to string generated from the character 0 multiplied by difficulty
-        while hash[0:difficulty] != '0' * difficulty:
+        # While subtring 0 up to difficulty of hash string does not equal to string generated from the character 0 multiplied by difficulty
+        while hex_to_binary(hash)[0:difficulty] != '0' * difficulty:
             nonce += 1
             timestamp = time.time_ns()
             difficulty = Block.adjust_difficulty(last_block, timestamp)
@@ -83,12 +85,45 @@ class Block:
         
         # Limits decreasing to 1
         return 1
+    
+    @staticmethod
+    # Validate block based on last hash, POW requirement, adjust difficulty by 1, block hash is valid combination of block fields
+    def is_valid_block(last_block, block):
+        if block.last_hash != last_block.hash:
+            # Creates user error
+            raise Exception('The last hash of the block must be correct!')
+            
+        if hex_to_binary(block.hash)[0:block.difficulty] != '0' * block.difficulty: 
+            raise Exception('Proof of work requirement is not met!')
+
+        if abs(last_block.difficulty - block.difficulty) > 1:
+            raise Exception('The block difficulty must be adjusted by 1')
+
+        reconstructed_hash = cryptohash (
+            block.timestamp,
+            block.last_hash,
+            block.data,
+            block.difficulty,
+            block.nonce,
+        )
+
+        if block.hash != reconstructed_hash:
+            raise Exception('The block hash must be correct!')
+
 
 def main():
     
     genesis_block = Block.genesis()
-    block = Block.mine_block(genesis_block, 'Ultimate')
-    print(block)
+    invalid_block = Block.mine_block(Block.genesis(), 'Ultimate')
+    invalid_block.last_hash = 'Invalid data'
+    
+    # Pass in the genesis block as the last block and the invalid block to validate
+    
+    try:
+        Block.is_valid_block(genesis_block, invalid_block)
+    except Exception as e:
+        print(f'is_valid_block: {e}')
+    
     
 if __name__ == '__main__':
     main()
