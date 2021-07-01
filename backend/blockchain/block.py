@@ -41,6 +41,14 @@ class Block:
             f'nonce: {self.nonce})'
         )
 
+    # comparison is done with instance of a class, other refers to object comparing it too.
+    def __eq__(self, other):
+        return self.__dict__ == other.__dict__
+    
+    # Serialize blocks into a dictionary of attr
+    def to_json(self):
+        return self.__dict__
+
     @staticmethod
     # Mine a block based on last block and its data, until a block hash is found that meets the leading 0 POW requirement
     def mine_block(last_block, data):
@@ -70,6 +78,11 @@ class Block:
         
         return Block(**GENESIS_DATA)
 
+    # Deserialize a block's json representation into a block instance
+    @staticmethod
+    def from_json(block_json):
+        return Block(**block_json)
+
     @staticmethod
     # Calculate adjusted difficulty according to mine rate
     # Access last blocks difficulty and timestamp
@@ -89,6 +102,7 @@ class Block:
     @staticmethod
     # Validate block based on last hash, POW requirement, adjust difficulty by 1, block hash is valid combination of block fields
     def is_valid_block(last_block, block):
+        
         if block.last_hash != last_block.hash:
             # Creates user error
             raise Exception('The last hash of the block must be correct!')

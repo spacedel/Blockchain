@@ -1,6 +1,8 @@
 # Import time module
 import time
 
+import pytest
+
 # Refer to backend/blockchain/bolock.py for Block class and GENESIS DATA
 from backend.blockchain.block import Block, GENESIS_DATA
 from backend.config import MINE_RATE, SECONDS
@@ -60,5 +62,35 @@ def test_mined_block_difficulty_limit_1():
     mined_block = Block.mine_block(last_block, 'Rich')
     assert mined_block.difficulty == 1
 
+# Fixture that multiple tests can share
+
+@pytest.fixture
+def last_block():
+    return Block.genesis()
+
+@pytest.fixture
+def block(last_block):
+    return Block.mine_block(last_block, 'test_data')
+
+def test_valid_block(last_block, block):
+    Block.is_valid_block(last_block, block)
+
+def test_valid_block_with_bad_last_hash(last_block, block):
+    block.last_hash = 'bad_hash'
+
+    with pytest.raises(Exception, match= 'The last hash of the block must be correct!'):
+        Block.is_valid_block(last_block, block)
+
+def valid_bad_pow(last_block, block):
+    block.hash = 'fff'
+
+    with pytest.raises(Exception, match= 'POW requirement was not met!'):
+        Block.is_valid_block(last_block, block)
+
+def valid_block_bad_hash(last_block, block):
+    block.hash = '00000000000000bbbabc'
+
+    with pytest.raises(Exception, match= 'block hash must be correct!'):
+        Block.is_valid_block(last_block, block)
 
 
