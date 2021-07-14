@@ -14,10 +14,10 @@ pip3 install -r requirement
 
 ```
 First activate virtual environment
-Then run 'python3 -m pytest backend/tests
+Then run 'python3 -m pytest backend/tests'
 ``` 
 
-**Run PEER Instance**
+**Run PEER Instance using Bash**
 ```
 Activate virtual environment
 export PEER=True; python -m backend.app

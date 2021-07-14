@@ -3,14 +3,21 @@ import random
 
 import requests
 
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 
+from backend.tests import wallet
 from backend.blockchain.blockchain import Blockchain
 from backend.pubsub import PubSub
+from backend.wallet.wallet import Wallet
+from backend.wallet.transaction import Transaction
+from backend.wallet.transaction_pool import TransactionPool
 
 app = Flask(__name__)
 blockchain = Blockchain()
-pubsub = PubSub(blockchain)
+wallet = Wallet()
+transaction_pool = TransactionPool()
+pubsub = PubSub(blockchain, transaction_pool)
+
 
 # Flask end points
 @app.route('/')
@@ -32,6 +39,32 @@ def route_blockchain_mine():
 
     return jsonify(block.to_json())
 
+@app.route('/wallet/transact', methods=['POST'])
+def route_wallet_transact():
+    transaction_data = request.get_json()
+    
+    transaction = transaction_pool.existing_transaction(wallet.address)
+    
+    if transaction:
+        transaction.update(
+            wallet,
+            transaction_data['recipient'],
+            transaction_data['amount']
+        )
+    else:
+        transaction = Transaction(
+            wallet,
+            transaction_data['recipient'],
+            transaction_data['amount']
+        )
+
+
+
+    pubsub.broadcast_transaction(transaction)
+    
+    return jsonify(transaction.to_json())
+
+
 # Set Port
 ROOT_PORT = 5000
 PORT = ROOT_PORT
@@ -50,4 +83,5 @@ if os.environ.get('PEER') == 'True':
         print('\n -- Successfully synchronized the local chain')
     except Exception as e:
         print(f'\n -- Error synchronizing: {e}')
+
 app.run(port = PORT)
