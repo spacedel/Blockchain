@@ -14,9 +14,10 @@ from cryptography.exceptions import InvalidSignature
 
 # Wallet for miner and keeps track of balance and authorize transactions
 class Wallet:
-    def __init__(self):
+    def __init__(self, blockchain=None):
+        self.blockchain = blockchain
         self.address = str(uuid.uuid4())[0:8]
-        self.balance = STARTING_BALANCE
+        
         self.private_key = ec.generate_private_key(
             ec.SECP256K1(),
             default_backend()
@@ -31,6 +32,11 @@ class Wallet:
             ec.ECDSA(hashes.SHA256()
         ))
     )
+
+    @property
+    def balance(self):
+        return Wallet.calculate_balance(self.blockchain, self.address)
+
 
     # Reset public key to serialized version (a byte string)
     # PEM encoding format (b'----BEGIN \ASFSDGF\ ----END)
@@ -67,6 +73,10 @@ class Wallet:
     @staticmethod
     def calculate_balance(blockchain, address):
         balance = STARTING_BALANCE
+        
+        if not blockchain:
+            return balance
+
         for block in blockchain.chain:
             for transaction in block.data:
                 if transaction['input']['address'] == address:

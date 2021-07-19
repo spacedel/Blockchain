@@ -1,6 +1,9 @@
 #Refer to block.py file in backend/blockchain path
 
 from backend.blockchain.block import Block
+from backend.wallet.transaction import Transaction
+from backend.wallet.wallet import Wallet
+from backend.config import MINING_REWARD_INPUT
 
 class Blockchain:
     
@@ -47,6 +50,58 @@ class Blockchain:
             block = chain[i]
             last_block = chain[i-1]
             Block.is_valid_block(last_block, block)
+
+        Blockchain.is_valid_transaction_chain(chain)
+
+    # Enforce rules of chain.
+    # Rules as follows: Must only appear once in chain. One mining reward per block. Each transaction must be valid.
+    @staticmethod
+    def is_valid_transaction_chain(chain):
+        transaction_ids = set()
+        
+        for i in range(len(chain)): 
+        
+            block = chain[i]
+
+            has_mining_reward = False
+
+            # Call each item in the block 'transaction_json' 
+            for transaction_json in block.data:
+                transaction = Transaction.from_json(transaction_json)
+
+                # Check transaction id is in the transaction id set
+                if transaction.id in transaction_ids:
+                    raise Exception (f'Transaction {transaction.id} is not unique!')
+
+                transaction_ids.add(transaction.id)
+
+                if transaction.input == MINING_REWARD_INPUT:
+                    if has_mining_reward:
+                        raise Exception(
+                            'There can be only one mining reward per block!' \
+                            f'Check block with hash: {block.hash}'
+                        )
+
+                    has_mining_reward = True
+                else:
+
+                    historic_blockchain = Blockchain()
+
+                    historic_blockchain.chain = chain[0:i]
+
+                    historic_balance = Wallet.calculate_balance(
+                        historic_blockchain, 
+                        transaction.input['address']
+                    ) 
+
+                    if historic_balance != transaction.input['amount']:
+                        raise Exception(
+                            f'Transaction: {transaction.id} has an invalid input amount! \
+                            We are watching closely...'
+                        )
+
+                Transaction.is_valid_transaction(transaction)
+
     
     # Replace local chain with incoming one only when its longer than the local one and is formatted properly
     def replace_chain(self, chain):
