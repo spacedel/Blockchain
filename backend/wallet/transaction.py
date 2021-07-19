@@ -1,6 +1,7 @@
 import uuid
 import time
 from backend.wallet.wallet import Wallet
+from backend.config import MINING_REWARD, MINING_REWARD_INPUT
 
 # Document exchange in currency from 1 to 1, or 1 to many recipients. 
 class Transaction:
@@ -77,9 +78,17 @@ class Transaction:
     def is_valid_transaction(transaction):
         output_total = sum(transaction.output.values())
 
+        # Validate the reward transaction given
+        if transaction.input == MINING_REWARD_INPUT:
+            if list(transaction.output.values()) != [MINING_REWARD]:
+                raise Exception('Invalid mining reward')
+            return  
+
+
         if transaction.input['amount'] != output_total:
             raise Exception('Invalid transaction output values!')
 
+        # Verify with public key and signature
         if not Wallet.verify(
             transaction.input['public_key'],
             transaction.output,
@@ -87,6 +96,15 @@ class Transaction:
         ):
 
             raise Exception('Invalid signature!')
+
+    # Generate a rewards transaction that awards the miner
+    @staticmethod
+    def reward_transaction(miner_wallet):
+        output = {}
+        output[miner_wallet.address] = MINING_REWARD
+
+        return Transaction(input=MINING_REWARD_INPUT, output=output )
+
 
         
 
