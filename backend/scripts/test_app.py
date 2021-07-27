@@ -1,4 +1,3 @@
-from backend.tests import wallet
 import requests
 import time
 
@@ -12,6 +11,8 @@ def get_blockchain():
 def get_blockchain_mine():
     return requests.get(f'{BASE_URL}/blockchain/mine').json() 
 
+
+# Assigned to the dictionary that contains a recipient and amount
 def post_wallet_transact(recipient, amount):
     return requests.post(
         f'{BASE_URL}/wallet/transact',
